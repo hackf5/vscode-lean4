@@ -1,8 +1,10 @@
 import {
     CodeWithInfos,
     InteractiveGoal,
+    InteractiveGoalCore,
     InteractiveHypothesisBundle,
     InteractiveHypothesisBundle_nonAnonymousNames,
+    InteractiveTermGoal,
 } from '@leanprover/infoview-api'
 import * as React from 'react'
 
@@ -71,6 +73,43 @@ function hypothesisKey(hypothesis: InteractiveHypothesisBundle, index: number): 
     return hypothesis.fvarIds && hypothesis.fvarIds.length > 0 ? hypothesis.fvarIds.join(':') : `hypothesis-${index}`
 }
 
+interface GoalContentProps {
+    goal: InteractiveGoalCore
+    goalPrefix?: string
+    targetLabel: string
+    targetChange?: ChangeKind
+}
+
+function GoalContent({ goal, goalPrefix = '⊢ ', targetLabel, targetChange }: GoalContentProps) {
+    return (
+        <>
+            {goal.hyps.length > 0 && (
+                <div className="experimental-proof-card__assumptions">
+                    <h4 className="experimental-proof-card__visually-hidden">Assumptions</h4>
+                    <dl>
+                        {goal.hyps.map((hypothesis, hypothesisIndex) => (
+                            <HypothesisRow key={hypothesisKey(hypothesis, hypothesisIndex)} hypothesis={hypothesis} />
+                        ))}
+                    </dl>
+                </div>
+            )}
+
+            <div className="experimental-proof-card__target">
+                <div className="experimental-proof-card__target-heading">
+                    <span>{targetLabel}</span>
+                    {targetChange && <ChangeMarker kind={targetChange} />}
+                </div>
+                <div className="experimental-proof-card__target-expression">
+                    <span className="experimental-proof-card__turnstile" aria-hidden="true">
+                        {goalPrefix}
+                    </span>
+                    <InteractiveCode fmt={goal.type} />
+                </div>
+            </div>
+        </>
+    )
+}
+
 function GoalSection({ goal, index, count }: { goal: InteractiveGoal; index: number; count: number }) {
     const headingId = React.useId()
     const goalChange = goal.isInserted ? 'added' : goal.isRemoved ? 'removed' : undefined
@@ -92,29 +131,7 @@ function GoalSection({ goal, index, count }: { goal: InteractiveGoal; index: num
                 {goalChange && <ChangeMarker kind={goalChange} />}
             </div>
 
-            {goal.hyps.length > 0 && (
-                <div className="experimental-proof-card__assumptions">
-                    <h4 className="experimental-proof-card__visually-hidden">Assumptions</h4>
-                    <dl>
-                        {goal.hyps.map((hypothesis, hypothesisIndex) => (
-                            <HypothesisRow key={hypothesisKey(hypothesis, hypothesisIndex)} hypothesis={hypothesis} />
-                        ))}
-                    </dl>
-                </div>
-            )}
-
-            <div className="experimental-proof-card__target">
-                <div className="experimental-proof-card__target-heading">
-                    <span>Target</span>
-                    {targetChange && <ChangeMarker kind={targetChange} />}
-                </div>
-                <div className="experimental-proof-card__target-expression">
-                    <span className="experimental-proof-card__turnstile" aria-hidden="true">
-                        {goal.goalPrefix ?? '⊢ '}
-                    </span>
-                    <InteractiveCode fmt={goal.type} />
-                </div>
-            </div>
+            <GoalContent goal={goal} goalPrefix={goal.goalPrefix} targetLabel="Target" targetChange={targetChange} />
         </section>
     )
 }
@@ -161,6 +178,29 @@ export function ProofStateCard({ state }: { state: InteractiveGoalState }) {
                         <GoalSection key={goalKey(goal, index)} goal={goal} index={index} count={goals.length} />
                     ))
                 )}
+            </div>
+        </article>
+    )
+}
+
+export function ExpectedTypeCard({ expectedType }: { expectedType: InteractiveTermGoal }) {
+    const headingId = React.useId()
+    const contextHeadingId = React.useId()
+
+    return (
+        <article className="experimental-proof-card experimental-expected-type-card" aria-labelledby={headingId}>
+            <header className="experimental-proof-card__header">
+                <div className="experimental-proof-card__identity">
+                    <h2 id={headingId}>Expected type</h2>
+                </div>
+            </header>
+            <div className="experimental-proof-card__body">
+                <section className="experimental-proof-card__goal" aria-labelledby={contextHeadingId}>
+                    <h3 id={contextHeadingId} className="experimental-proof-card__visually-hidden">
+                        Expected type context
+                    </h3>
+                    <GoalContent goal={expectedType} targetLabel="Type" />
+                </section>
             </div>
         </article>
     )

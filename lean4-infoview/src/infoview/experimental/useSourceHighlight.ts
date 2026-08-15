@@ -5,6 +5,7 @@ import type { Location, Range } from 'vscode-languageserver-protocol'
 import { EditorContext } from '../contexts'
 import type { AsyncState } from '../util'
 import type { InteractiveGoalSnapshot } from './rpc'
+import type { InteractivePositionSnapshot } from './usePositionSnapshot'
 
 function rangeKey(range: Range): string {
     return `${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`
@@ -29,7 +30,7 @@ function sourceHighlight(
     return { uri, scopeRanges, tacticRanges }
 }
 
-export function useSourceHighlight(location: Location, result: AsyncState<InteractiveGoalSnapshot | undefined>): void {
+export function useSourceHighlight(location: Location, result: AsyncState<InteractivePositionSnapshot>): void {
     const editor = React.useContext(EditorContext)
     const previousUri = React.useRef<string | undefined>(undefined)
 
@@ -53,7 +54,9 @@ export function useSourceHighlight(location: Location, result: AsyncState<Intera
     React.useEffect(() => {
         if (result.state === 'loading') return
         const highlight =
-            result.state === 'resolved' && result.value ? sourceHighlight(location.uri, result.value) : undefined
+            result.state === 'resolved' && result.value.scopedGoals
+                ? sourceHighlight(location.uri, result.value.scopedGoals)
+                : undefined
         updateHighlight(highlight)
     }, [location.uri, result, updateHighlight])
 

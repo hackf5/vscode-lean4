@@ -173,12 +173,16 @@
 }
 
 .lean4-infoview-experimental-layout .experimental-proof-card__target {
-    margin-block-start: 14px;
+    margin-block-start: 0;
     padding: 11px 12px 12px;
     background: var(--vscode-textBlockQuote-background, var(--vscode-editorWidget-background));
     border-block-start: 1px solid var(--vscode-textBlockQuote-border, var(--vscode-panel-border));
     border-inline-start: 3px solid
         var(--vscode-textBlockQuote-border, var(--vscode-widget-border, var(--vscode-panel-border)));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__assumptions + .experimental-proof-card__target {
+    margin-block-start: 14px;
 }
 
 .lean4-infoview-experimental-layout .experimental-proof-card__target-heading {

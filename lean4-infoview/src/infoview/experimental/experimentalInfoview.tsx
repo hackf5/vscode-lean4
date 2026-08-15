@@ -5,9 +5,9 @@ import { CapabilityContext, EditorContext, EnvPosContext, VersionContext } from 
 import { WithRpcSessions } from '../rpcSessions'
 import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
-import { ProofStateCard } from './proofStateCard'
-import type { InteractiveGoalSnapshot, InteractiveGoalState } from './rpc'
-import { useGoalSnapshot } from './useGoalSnapshot'
+import { ExpectedTypeCard, ProofStateCard } from './proofStateCard'
+import type { InteractiveGoalState } from './rpc'
+import { type InteractivePositionSnapshot, usePositionSnapshot } from './usePositionSnapshot'
 import { useSourceHighlight } from './useSourceHighlight'
 
 function rangeKey(range: Range | undefined): string {
@@ -33,13 +33,24 @@ function keyedStates(states: InteractiveGoalState[]): { key: string; state: Inte
     })
 }
 
-function Snapshot({ snapshot, busy = false }: { snapshot: InteractiveGoalSnapshot; busy?: boolean }) {
+function Snapshot({ snapshot, busy = false }: { snapshot: InteractivePositionSnapshot; busy?: boolean }) {
+    const states = snapshot.scopedGoals?.states ?? []
+    const hasExpectedType = snapshot.expectedType !== undefined
+
     return (
         <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
-            {snapshot.states.length === 0 ? (
-                <p className="experimental-infoview__empty">No tactic state at this position.</p>
-            ) : (
-                keyedStates(snapshot.states).map(({ key, state }) => <ProofStateCard key={key} state={state} />)
+            {keyedStates(states).map(({ key, state }) => (
+                <ProofStateCard key={key} state={state} />
+            ))}
+            {snapshot.expectedType && <ExpectedTypeCard expectedType={snapshot.expectedType} />}
+            {snapshot.scopedGoals && states.length === 0 && !hasExpectedType && (
+                <p className="experimental-infoview__empty">No proof state or expected type at this position.</p>
+            )}
+            {!snapshot.scopedGoals && (
+                <section className="experimental-infoview__notice" aria-labelledby="experimental-rpc-unavailable">
+                    <h2 id="experimental-rpc-unavailable">Scoped proof states are unavailable</h2>
+                    <p>The open Lean file does not provide the experimental Infoview RPC.</p>
+                </section>
             )}
         </div>
     )
@@ -48,11 +59,11 @@ function Snapshot({ snapshot, busy = false }: { snapshot: InteractiveGoalSnapsho
 interface CachedSnapshot {
     uri: string
     documentRevision: number
-    snapshot: InteractiveGoalSnapshot
+    snapshot: InteractivePositionSnapshot
 }
 
 function ExperimentalGoalSnapshot({ location }: { location: Location }) {
-    const { documentRevision, result } = useGoalSnapshot(location)
+    const { documentRevision, result } = usePositionSnapshot(location)
     const cached = React.useRef<CachedSnapshot | undefined>(undefined)
     useSourceHighlight(location, result)
 
@@ -82,21 +93,13 @@ function ExperimentalGoalSnapshot({ location }: { location: Location }) {
                 </EnvPosContext.Provider>
             )
         }
-        return <p role="status">Reading the scoped proof state from Lean…</p>
+        return <p role="status">Reading information from Lean…</p>
     }
     if (result.state === 'rejected') {
         return (
             <section className="experimental-infoview__notice" aria-labelledby="experimental-rpc-error">
-                <h2 id="experimental-rpc-error">Unable to read the proof state</h2>
+                <h2 id="experimental-rpc-error">Unable to read information from Lean</h2>
                 <p>{mapRpcError(result.error).message}</p>
-            </section>
-        )
-    }
-    if (!result.value) {
-        return (
-            <section className="experimental-infoview__notice" aria-labelledby="experimental-rpc-unavailable">
-                <h2 id="experimental-rpc-unavailable">Scoped proof states are unavailable</h2>
-                <p>The open Lean file does not provide the experimental Infoview RPC.</p>
             </section>
         )
     }
