@@ -6,6 +6,7 @@ import type { DidCloseTextDocumentParams, DocumentUri, Location } from 'vscode-l
 import '@vscode/codicons/dist/codicon.css'
 import '@vscode/codicons/dist/codicon.ttf'
 import 'tachyons/css/tachyons.css'
+import './experimental/experimentalInfoview.css'
 import './highlightjs.css'
 import './index.css'
 
@@ -13,6 +14,7 @@ import {
     defaultInfoviewConfig,
     EditorApi,
     InfoviewApi,
+    InfoviewConfig,
     LeanFileProgressParams,
     LeanFileProgressProcessingInfo,
 } from '@leanprover/infoview-api'
@@ -20,6 +22,7 @@ import {
 import { CapabilityContext, ConfigContext, EditorContext, ProgressContext, VersionContext } from './contexts'
 import { EditorConnection, EditorEvents } from './editorConnection'
 import { EventEmitter } from './event'
+import { ExperimentalInfoview } from './experimental/experimentalInfoview'
 import { Infos } from './infos'
 import { AllMessages, WithLspDiagnosticsContext } from './messages'
 import { WithRpcSessions } from './rpcSessions'
@@ -38,6 +41,12 @@ function Main({ uiElement }: { uiElement: HTMLElement }) {
         uiElement.classList.toggle(experimentalLayoutClassName, config.experimentalLayout === true)
         return () => uiElement.classList.remove(experimentalLayoutClassName)
     }, [config.experimentalLayout, uiElement])
+
+    return config.experimentalLayout === true ? <ExperimentalInfoview /> : <LegacyInfoview config={config} />
+}
+
+function LegacyInfoview({ config }: { config: InfoviewConfig }) {
+    const ec = React.useContext(EditorContext)
 
     const [allProgress, _1] = useServerNotificationState(
         '$/lean/fileProgress',
