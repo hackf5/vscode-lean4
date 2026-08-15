@@ -10,8 +10,8 @@ the packages in tandem using NPM workspaces.
 ![overview](images/overview.png)
 
 ### Building
-- Make sure you have an up to date installation of `npm` and `node.js`.  For example `npm` version 8.1.3 and `node.js` version v16.13.0.
-- Run `npm install` in your workspace root folder to set up the project's dependencies.
+- Install [`nvm`](https://github.com/nvm-sh/nvm), then run `nvm install` and `nvm use` in the workspace root. The required Node.js version is recorded in [`.nvmrc`](../.nvmrc).
+- Run `npm ci` in your workspace root folder to set up the project's dependencies.
 - Run `npm run build`. This compiles the extension.
 
 ### Testing
