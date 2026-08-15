@@ -27,6 +27,7 @@ export type ExpectedTypeVisibility = 'Expanded by default' | 'Collapsed by defau
 export type MessageOrder = 'Sort by proximity to text cursor' | 'Sort by message location'
 
 export interface InfoviewConfig {
+    experimentalLayout?: boolean
     allErrorsOnLine: boolean
     autoOpenShowsGoal: boolean
     debounceTime: number
@@ -130,6 +131,7 @@ export interface InfoviewTacticStateFilter {
 }
 
 export const defaultInfoviewConfig: InfoviewConfig = {
+    experimentalLayout: false,
     allErrorsOnLine: true,
     autoOpenShowsGoal: true,
     debounceTime: 50,

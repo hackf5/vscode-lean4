@@ -26,11 +26,18 @@ import { WithRpcSessions } from './rpcSessions'
 import { ServerVersion } from './serverVersion'
 import { useClientNotificationEffect, useEventResult, useServerNotificationState } from './util'
 
-function Main() {
+const experimentalLayoutClassName = 'lean4-infoview-experimental-layout'
+
+function Main({ uiElement }: { uiElement: HTMLElement }) {
     const ec = React.useContext(EditorContext)
 
     /* Set up updates to the global infoview state on editor events. */
     const config = useEventResult(ec.events.changedInfoviewConfig) ?? defaultInfoviewConfig
+
+    React.useLayoutEffect(() => {
+        uiElement.classList.toggle(experimentalLayoutClassName, config.experimentalLayout === true)
+        return () => uiElement.classList.remove(experimentalLayoutClassName)
+    }, [config.experimentalLayout, uiElement])
 
     const [allProgress, _1] = useServerNotificationState(
         '$/lean/fileProgress',
@@ -170,7 +177,7 @@ export function renderInfoview(editorApi: EditorApi, uiElement: HTMLElement): In
     root.render(
         <React.StrictMode>
             <EditorContext.Provider value={ec}>
-                <Main />
+                <Main uiElement={uiElement} />
             </EditorContext.Provider>
         </React.StrictMode>,
     )

@@ -37,6 +37,7 @@ import {
     getInfoViewDebounceTime,
     getInfoViewEmphasizeFirstGoal,
     getInfoViewExpectedTypeVisibility,
+    getInfoViewExperimentalLayout,
     getInfoViewHideInaccessibleAssumptions,
     getInfoViewHideInstanceAssumptions,
     getInfoViewHideLetValues,
@@ -904,6 +905,7 @@ export class InfoProvider implements Disposable {
 
     private async sendConfig() {
         await this.webviewPanel?.api.changedInfoviewConfig({
+            experimentalLayout: getInfoViewExperimentalLayout(),
             allErrorsOnLine: getInfoViewAllErrorsOnLine(),
             autoOpenShowsGoal: getInfoViewAutoOpenShowsGoal(),
             debounceTime: getInfoViewDebounceTime(),

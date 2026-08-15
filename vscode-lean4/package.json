@@ -135,6 +135,11 @@
                     "default": "",
                     "markdownDescription": "Add an additional CSS snippet to the infoview."
                 },
+                "lean4.infoview.experimentalLayout": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Use the experimental Infoview presentation."
+                },
                 "lean4.infoview.showExpectedType": {
                     "type": "boolean",
                     "default": true,

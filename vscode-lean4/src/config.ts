@@ -98,6 +98,10 @@ export function getInfoViewStyle(): string {
     return workspace.getConfiguration('lean4').get('infoViewStyle', '')
 }
 
+export function getInfoViewExperimentalLayout(): boolean {
+    return workspace.getConfiguration('lean4.infoview').get('experimentalLayout', false)
+}
+
 export function getInfoViewAutoOpen(): boolean {
     const val = workspace.getConfiguration('lean4.infoview').get<boolean>('autoOpen')
     if (val !== undefined) return val
