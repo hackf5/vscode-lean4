@@ -41,6 +41,124 @@
     border-radius: 4px;
 }
 
+.lean4-infoview-experimental-layout .experimental-message-card {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+    border-radius: 4px;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 16px 12px;
+    border-block-end: 1px solid
+        var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__count {
+    flex: 0 0 auto;
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic {
+    --experimental-message-severity: var(--vscode-descriptionForeground);
+
+    padding: 14px 16px 16px 13px;
+    border-inline-start: 3px solid var(--experimental-message-severity);
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic + .experimental-message-card__diagnostic {
+    border-block-start: 1px solid
+        var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic[data-severity='error'] {
+    --experimental-message-severity: var(--vscode-editorError-foreground, var(--vscode-errorForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic[data-severity='warning'] {
+    --experimental-message-severity: var(
+        --vscode-editorWarning-foreground,
+        var(--vscode-problemsWarningIcon-foreground)
+    );
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic[data-severity='information'] {
+    --experimental-message-severity: var(--vscode-editorInfo-foreground, var(--vscode-problemsInfoIcon-foreground));
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic[data-severity='hint'] {
+    --experimental-message-severity: var(--vscode-editorHint-foreground, var(--vscode-descriptionForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__diagnostic-header h3 {
+    margin: 0;
+    color: var(--experimental-message-severity);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__location {
+    min-width: 0;
+    padding: 1px 0;
+    overflow: hidden;
+    color: var(--vscode-textLink-foreground);
+    font: inherit;
+    font-size: 0.85rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__location:hover {
+    color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+    text-decoration: underline;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__location:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__body {
+    min-width: 0;
+    margin-block-start: 10px;
+    overflow-wrap: anywhere;
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+    font-weight: var(--vscode-editor-font-weight);
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
 .lean4-infoview-experimental-layout .experimental-proof-card__header {
     display: flex;
     align-items: flex-start;
@@ -280,6 +398,27 @@
         flex-direction: column;
         gap: 8px;
         padding-inline: 12px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-message-card__header,
+    .lean4-infoview-experimental-layout .experimental-message-card__diagnostic-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-message-card__header {
+        padding-inline: 12px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-message-card__diagnostic {
+        padding-inline-end: 12px;
+        padding-inline-start: 9px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-message-card__count,
+    .lean4-infoview-experimental-layout .experimental-message-card__location {
+        font-size: 0.85em;
     }
 
     .lean4-infoview-experimental-layout .experimental-proof-card__count {

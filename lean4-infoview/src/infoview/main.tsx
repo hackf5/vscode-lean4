@@ -44,7 +44,9 @@ function Main({ uiElement }: { uiElement: HTMLElement }) {
 
     return config.experimentalLayout === true ? (
         <ConfigContext.Provider value={config}>
-            <ExperimentalInfoview />
+            <WithLspDiagnosticsContext>
+                <ExperimentalInfoview />
+            </WithLspDiagnosticsContext>
         </ConfigContext.Provider>
     ) : (
         <LegacyInfoview config={config} />

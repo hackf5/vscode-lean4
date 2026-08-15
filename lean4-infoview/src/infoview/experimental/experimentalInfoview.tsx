@@ -5,6 +5,7 @@ import { CapabilityContext, EditorContext, EnvPosContext, VersionContext } from 
 import { WithRpcSessions } from '../rpcSessions'
 import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
+import { MessagesCard } from './messageCard'
 import { ExpectedTypeCard, ProofStateCard } from './proofStateCard'
 import type { InteractiveGoalState } from './rpc'
 import { type InteractivePositionSnapshot, usePositionSnapshot } from './usePositionSnapshot'
@@ -33,9 +34,18 @@ function keyedStates(states: InteractiveGoalState[]): { key: string; state: Inte
     })
 }
 
-function Snapshot({ snapshot, busy = false }: { snapshot: InteractivePositionSnapshot; busy?: boolean }) {
+function Snapshot({
+    uri,
+    snapshot,
+    busy = false,
+}: {
+    uri: string
+    snapshot: InteractivePositionSnapshot
+    busy?: boolean
+}) {
     const states = snapshot.scopedGoals?.states ?? []
     const hasExpectedType = snapshot.expectedType !== undefined
+    const hasMessages = snapshot.messages.length > 0
 
     return (
         <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
@@ -43,8 +53,11 @@ function Snapshot({ snapshot, busy = false }: { snapshot: InteractivePositionSna
                 <ProofStateCard key={key} state={state} />
             ))}
             {snapshot.expectedType && <ExpectedTypeCard expectedType={snapshot.expectedType} />}
-            {snapshot.scopedGoals && states.length === 0 && !hasExpectedType && (
-                <p className="experimental-infoview__empty">No proof state or expected type at this position.</p>
+            {hasMessages && <MessagesCard uri={uri} messages={snapshot.messages} />}
+            {snapshot.scopedGoals && states.length === 0 && !hasExpectedType && !hasMessages && (
+                <p className="experimental-infoview__empty">
+                    No proof state, expected type, or messages at this position.
+                </p>
             )}
             {!snapshot.scopedGoals && (
                 <section className="experimental-infoview__notice" aria-labelledby="experimental-rpc-unavailable">
@@ -89,7 +102,7 @@ function ExperimentalGoalSnapshot({ location }: { location: Location }) {
                         character: cached.current.snapshot.queryPosition.character,
                     }}
                 >
-                    <Snapshot snapshot={cached.current.snapshot} busy />
+                    <Snapshot uri={location.uri} snapshot={cached.current.snapshot} busy />
                 </EnvPosContext.Provider>
             )
         }
@@ -111,7 +124,7 @@ function ExperimentalGoalSnapshot({ location }: { location: Location }) {
                 character: result.value.queryPosition.character,
             }}
         >
-            <Snapshot snapshot={result.value} />
+            <Snapshot uri={location.uri} snapshot={result.value} />
         </EnvPosContext.Provider>
     )
 }
