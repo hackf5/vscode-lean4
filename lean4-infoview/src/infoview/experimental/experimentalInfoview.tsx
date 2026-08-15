@@ -7,6 +7,7 @@ import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
 import type { InteractiveGoalSnapshot, InteractiveGoalState } from './rpc'
 import { useGoalSnapshot } from './useGoalSnapshot'
+import { useSourceHighlight } from './useSourceHighlight'
 
 function formatPosition(position: Position): string {
     return `${position.line + 1}:${position.character + 1}`
@@ -79,6 +80,7 @@ function Snapshot({ snapshot }: { snapshot: InteractiveGoalSnapshot }) {
 
 function ExperimentalGoalSnapshot({ location }: { location: Location }) {
     const result = useGoalSnapshot(location)
+    useSourceHighlight(location, result)
     if (result.state === 'loading') {
         return <p role="status">Reading the scoped proof state from Lean…</p>
     }

@@ -2,6 +2,7 @@ import type {
     DocumentUri,
     InitializeResult,
     Location,
+    Range,
     ShowDocumentParams,
     TextDocumentPositionParams,
     WorkspaceEdit,
@@ -64,6 +65,13 @@ export interface ClientRequestOptions {
     abortSignal?: AbortSignal
 }
 
+/** Source ranges rendered by the experimental Infoview in the hosting editor. */
+export interface ExperimentalInfoviewSourceHighlight {
+    uri: DocumentUri
+    scopeRanges: Range[]
+    tacticRanges: Range[]
+}
+
 /** Interface that the InfoView WebView uses to talk to the hosting editor. */
 export interface EditorApi {
     saveConfig(config: InfoviewConfig): Promise<any>
@@ -108,6 +116,9 @@ export interface EditorApi {
 
     /** Highlight a range in a document in the editor. */
     showDocument(show: ShowDocumentParams): Promise<void>
+
+    /** Replaces or clears the source ranges associated with the experimental Infoview. */
+    setExperimentalInfoviewSourceHighlight?(highlight?: ExperimentalInfoviewSourceHighlight): Promise<void>
 
     /** Restarts the given file. */
     restartFile(uri: string): Promise<void>

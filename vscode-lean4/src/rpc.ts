@@ -200,6 +200,7 @@ export function editorApiOfRpc(api: EditorRpcApi): EditorApi {
         insertText: api.insertText,
         applyEdit: api.applyEdit,
         showDocument: api.showDocument,
+        setExperimentalInfoviewSourceHighlight: api.setExperimentalInfoviewSourceHighlight,
         restartFile: api.restartFile,
         createRpcSession: api.createRpcSession,
         closeRpcSession: api.closeRpcSession,

@@ -50,6 +50,7 @@ import {
     minIfProd,
     prodOrDev,
 } from './config'
+import { ExperimentalInfoviewHighlightController } from './experimentalInfoviewHighlight'
 import { LeanClient } from './leanclient'
 import { EditorRpcApi, Rpc } from './rpc'
 import { LeanClientProvider } from './utils/clientProvider'
@@ -103,6 +104,7 @@ export class InfoProvider implements Disposable {
 
     private stylesheet: string = ''
     private autoOpened: boolean = false
+    private readonly experimentalSourceHighlight = new ExperimentalInfoviewHighlightController()
 
     // Subscriptions are counted and only disposed of when count becomes 0.
     private serverNotifSubscriptions: Map<string, [number, Disposable[]]> = new Map()
@@ -384,6 +386,9 @@ export class InfoProvider implements Disposable {
             }
             void this.revealEditorSelection(uri, p2cConverter.asRange(show.selection))
         },
+        setExperimentalInfoviewSourceHighlight: async highlight => {
+            this.experimentalSourceHighlight.setHighlight(highlight)
+        },
         restartFile: async uri => {
             const extUri = parseExtUri(uri)
             if (extUri === undefined) {
@@ -427,6 +432,7 @@ export class InfoProvider implements Disposable {
         this.updateStylesheet()
 
         this.subscriptions.push(
+            this.experimentalSourceHighlight,
             clientProvider.clientAdded(client => {
                 void this.onClientAdded(client)
             }),
@@ -441,6 +447,9 @@ export class InfoProvider implements Disposable {
             workspace.onDidChangeConfiguration(async _e => {
                 // regression; changing the style needs a reload. :/
                 this.updateStylesheet()
+                const experimentalLayout = getInfoViewExperimentalLayout()
+                if (!experimentalLayout) this.experimentalSourceHighlight.clear()
+                this.experimentalSourceHighlight.setVisible(experimentalLayout && this.webviewPanel?.visible === true)
                 await this.sendConfig()
             }),
             lean.onDidChangeLeanDocument(() => this.sendPosition()),
@@ -862,7 +871,15 @@ export class InfoProvider implements Disposable {
                 }
             })
             webviewPanel.api = webviewPanel.rpc.getApi()
+            this.experimentalSourceHighlight.setVisible(getInfoViewExperimentalLayout() && webviewPanel.visible)
+            webviewPanel.onDidChangeViewState(event => {
+                this.experimentalSourceHighlight.setVisible(
+                    getInfoViewExperimentalLayout() && event.webviewPanel.visible,
+                )
+            })
             webviewPanel.onDidDispose(() => {
+                this.experimentalSourceHighlight.clear()
+                this.experimentalSourceHighlight.setVisible(false)
                 this.webviewPanel = undefined
                 this.clearNotificationHandlers()
                 this.clearRpcSessions(null) // should be after `webviewPanel = undefined`
