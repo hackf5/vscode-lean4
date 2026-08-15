@@ -1,9 +1,13 @@
 import {
     getInteractiveDiagnostics,
+    getInteractiveGoals,
     getInteractiveTermGoal,
     type InteractiveDiagnostic,
+    type InteractiveGoals,
     type InteractiveTermGoal,
     type LeanDiagnostic,
+    type UserWidgetInstance,
+    Widget_getWidgets,
 } from '@leanprover/infoview-api'
 import * as React from 'react'
 import type {
@@ -21,7 +25,9 @@ import { getInteractiveGoalSnapshot, type InteractiveGoalSnapshot } from './rpc'
 export interface InteractivePositionSnapshot {
     queryPosition: Position
     scopedGoals?: InteractiveGoalSnapshot
+    widgetGoals?: InteractiveGoals
     expectedType?: InteractiveTermGoal
+    widgets: UserWidgetInstance[]
     messages: InteractiveDiagnostic[]
 }
 
@@ -77,14 +83,23 @@ export function usePositionSnapshot(location: Location) {
                     if (abortSignal.aborted) throw error
                     return fallbackMessages
                 })
-            const [scopedGoals, expectedType, messages] = await Promise.all([
+            const [scopedGoals, widgetGoals, expectedType, widgets, messages] = await Promise.all([
                 getInteractiveGoalSnapshot(session, params, { abortSignal }).catch(error =>
                     discardMethodNotFound(error),
                 ),
+                getInteractiveGoals(session, params, { abortSignal }),
                 getInteractiveTermGoal(session, params, { abortSignal }),
+                Widget_getWidgets(session, params.position, { abortSignal }).catch(discardMethodNotFound),
                 messagesRequest,
             ])
-            return { queryPosition: params.position, scopedGoals, expectedType, messages }
+            return {
+                queryPosition: params.position,
+                scopedGoals,
+                widgetGoals,
+                expectedType,
+                widgets: widgets?.widgets ?? [],
+                messages,
+            }
         },
         [
             session,

@@ -6,6 +6,7 @@ import { WithRpcSessions } from '../rpcSessions'
 import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
 import { MessagesCard } from './messageCard'
+import { PanelWidgetCards } from './panelWidgetCard'
 import { ExpectedTypeCard, ProofStateCard } from './proofStateCard'
 import type { InteractiveGoalState } from './rpc'
 import { type InteractivePositionSnapshot, usePositionSnapshot } from './usePositionSnapshot'
@@ -45,7 +46,9 @@ function Snapshot({
 }) {
     const states = snapshot.scopedGoals?.states ?? []
     const hasExpectedType = snapshot.expectedType !== undefined
+    const hasWidgets = snapshot.widgets.length > 0
     const hasMessages = snapshot.messages.length > 0
+    const position = { uri, ...snapshot.queryPosition }
 
     return (
         <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
@@ -53,10 +56,18 @@ function Snapshot({
                 <ProofStateCard key={key} state={state} />
             ))}
             {snapshot.expectedType && <ExpectedTypeCard expectedType={snapshot.expectedType} />}
+            {hasWidgets && (
+                <PanelWidgetCards
+                    pos={position}
+                    goals={snapshot.widgetGoals?.goals ?? []}
+                    termGoal={snapshot.expectedType}
+                    widgets={snapshot.widgets}
+                />
+            )}
             {hasMessages && <MessagesCard uri={uri} messages={snapshot.messages} />}
-            {snapshot.scopedGoals && states.length === 0 && !hasExpectedType && !hasMessages && (
+            {snapshot.scopedGoals && states.length === 0 && !hasExpectedType && !hasWidgets && !hasMessages && (
                 <p className="experimental-infoview__empty">
-                    No proof state, expected type, or messages at this position.
+                    No proof state, expected type, panel widget, or messages at this position.
                 </p>
             )}
             {!snapshot.scopedGoals && (
