@@ -16,9 +16,10 @@ export function useGoalSnapshot(location: Location) {
         (revision, change) => (change.textDocument.uri === location.uri ? revision + 1 : revision),
         [location.uri],
     )
-    return useAsync<InteractiveGoalSnapshot | undefined>(
+    const result = useAsync<InteractiveGoalSnapshot | undefined>(
         abortSignal =>
             getInteractiveGoalSnapshot(session, params, { abortSignal }).catch(error => discardMethodNotFound(error)),
         [session, params.textDocument.uri, params.position.line, params.position.character, documentRevision],
     )
+    return { documentRevision, result }
 }

@@ -1,87 +1,87 @@
 import * as React from 'react'
-import type { Location, Position, Range } from 'vscode-languageserver-protocol'
+import type { Location, Range } from 'vscode-languageserver-protocol'
 
-import { CapabilityContext, EditorContext, VersionContext } from '../contexts'
+import { CapabilityContext, EditorContext, EnvPosContext, VersionContext } from '../contexts'
 import { WithRpcSessions } from '../rpcSessions'
 import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
+import { ProofStateCard } from './proofStateCard'
 import type { InteractiveGoalSnapshot, InteractiveGoalState } from './rpc'
 import { useGoalSnapshot } from './useGoalSnapshot'
 import { useSourceHighlight } from './useSourceHighlight'
 
-function formatPosition(position: Position): string {
-    return `${position.line + 1}:${position.character + 1}`
+function rangeKey(range: Range | undefined): string {
+    if (!range) return 'no-range'
+    return `${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`
 }
 
-function formatRange(range: Range | undefined): string {
-    if (!range) return 'Not available'
-    return `${formatPosition(range.start)}–${formatPosition(range.end)}`
+function stateKeyBase(state: InteractiveGoalState): string {
+    return [
+        rangeKey(state.tacticRange),
+        state.useAfter ? 'after' : 'before',
+        state.declaration?.name ?? 'command',
+    ].join('|')
 }
 
-function StateScope({ state, index }: { state: InteractiveGoalState; index: number }) {
-    const headingId = `experimental-goal-state-${index}`
+function keyedStates(states: InteractiveGoalState[]): { key: string; state: InteractiveGoalState }[] {
+    const occurrences = new Map<string, number>()
+    return states.map(state => {
+        const base = stateKeyBase(state)
+        const occurrence = occurrences.get(base) ?? 0
+        occurrences.set(base, occurrence + 1)
+        return { key: occurrence === 0 ? base : `${base}|${occurrence}`, state }
+    })
+}
+
+function Snapshot({ snapshot, busy = false }: { snapshot: InteractiveGoalSnapshot; busy?: boolean }) {
     return (
-        <section className="experimental-infoview__scope" aria-labelledby={headingId}>
-            <h2 id={headingId}>Selected tactic state {index + 1}</h2>
-            <dl>
-                <div>
-                    <dt>Declaration</dt>
-                    <dd>{state.declaration ? <code>{state.declaration.name}</code> : 'Not a named declaration'}</dd>
-                </div>
-                <div>
-                    <dt>Declaration range</dt>
-                    <dd>{formatRange(state.declaration?.range)}</dd>
-                </div>
-                <div>
-                    <dt>Name range</dt>
-                    <dd>{formatRange(state.declaration?.selectionRange)}</dd>
-                </div>
-                <div>
-                    <dt>Tactic range</dt>
-                    <dd>{formatRange(state.tacticRange)}</dd>
-                </div>
-                <div>
-                    <dt>Proof state</dt>
-                    <dd>{state.useAfter ? 'After this tactic' : 'Before this tactic'}</dd>
-                </div>
-                <div>
-                    <dt>Goals</dt>
-                    <dd>{state.goals.goals.length}</dd>
-                </div>
-            </dl>
-        </section>
-    )
-}
-
-function Snapshot({ snapshot }: { snapshot: InteractiveGoalSnapshot }) {
-    return (
-        <div className="experimental-infoview__snapshot">
-            <section className="experimental-infoview__scope" aria-labelledby="experimental-query-heading">
-                <h2 id="experimental-query-heading">Query context</h2>
-                <dl>
-                    <div>
-                        <dt>Cursor position</dt>
-                        <dd>{formatPosition(snapshot.queryPosition)}</dd>
-                    </div>
-                    <div>
-                        <dt>Command range</dt>
-                        <dd>{formatRange(snapshot.commandRange)}</dd>
-                    </div>
-                </dl>
-            </section>
+        <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
             {snapshot.states.length === 0 ? (
-                <p className="experimental-infoview__empty">No tactic proof state was selected at this position.</p>
+                <p className="experimental-infoview__empty">No tactic state at this position.</p>
             ) : (
-                snapshot.states.map((state, index) => <StateScope key={index} state={state} index={index} />)
+                keyedStates(snapshot.states).map(({ key, state }) => <ProofStateCard key={key} state={state} />)
             )}
         </div>
     )
 }
 
+interface CachedSnapshot {
+    uri: string
+    documentRevision: number
+    snapshot: InteractiveGoalSnapshot
+}
+
 function ExperimentalGoalSnapshot({ location }: { location: Location }) {
-    const result = useGoalSnapshot(location)
+    const { documentRevision, result } = useGoalSnapshot(location)
+    const cached = React.useRef<CachedSnapshot | undefined>(undefined)
     useSourceHighlight(location, result)
+
+    React.useEffect(() => {
+        if (result.state === 'resolved' && result.value) {
+            cached.current = { uri: location.uri, documentRevision, snapshot: result.value }
+        } else if (
+            result.state !== 'loading' ||
+            cached.current?.uri !== location.uri ||
+            cached.current?.documentRevision !== documentRevision
+        ) {
+            cached.current = undefined
+        }
+    }, [documentRevision, location.uri, result])
+
     if (result.state === 'loading') {
+        if (cached.current?.uri === location.uri && cached.current.documentRevision === documentRevision) {
+            return (
+                <EnvPosContext.Provider
+                    value={{
+                        uri: location.uri,
+                        line: cached.current.snapshot.queryPosition.line,
+                        character: cached.current.snapshot.queryPosition.character,
+                    }}
+                >
+                    <Snapshot snapshot={cached.current.snapshot} busy />
+                </EnvPosContext.Provider>
+            )
+        }
         return <p role="status">Reading the scoped proof state from Lean…</p>
     }
     if (result.state === 'rejected') {
@@ -100,7 +100,17 @@ function ExperimentalGoalSnapshot({ location }: { location: Location }) {
             </section>
         )
     }
-    return <Snapshot snapshot={result.value} />
+    return (
+        <EnvPosContext.Provider
+            value={{
+                uri: location.uri,
+                line: result.value.queryPosition.line,
+                character: result.value.queryPosition.character,
+            }}
+        >
+            <Snapshot snapshot={result.value} />
+        </EnvPosContext.Provider>
+    )
 }
 
 export function ExperimentalInfoview() {
@@ -131,10 +141,9 @@ export function ExperimentalInfoview() {
 
     return (
         <main className="experimental-infoview" aria-labelledby="experimental-infoview-title">
-            <div className="experimental-infoview__introduction">
-                <h1 id="experimental-infoview-title">Experimental Infoview</h1>
-                <p>The experimental renderer is showing the source scope selected by Lean.</p>
-            </div>
+            <h1 id="experimental-infoview-title" className="experimental-infoview__visually-hidden">
+                Experimental Infoview
+            </h1>
             {content}
         </main>
     )

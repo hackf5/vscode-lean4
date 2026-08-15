@@ -5,96 +5,290 @@
 .lean4-infoview-experimental-layout .experimental-infoview {
     box-sizing: border-box;
     min-height: 100%;
-    padding: 24px;
+    padding: 16px;
     color: var(--vscode-foreground);
     background: var(--vscode-editor-background);
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size);
     font-weight: var(--vscode-font-weight);
+    line-height: 1.45;
 }
 
-.lean4-infoview-experimental-layout .experimental-infoview__introduction {
-    max-width: 36rem;
-    padding-inline-start: 12px;
-    border-inline-start: 2px solid var(--vscode-focusBorder);
+.lean4-infoview-experimental-layout .experimental-infoview__visually-hidden,
+.lean4-infoview-experimental-layout .experimental-proof-card__visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-.lean4-infoview-experimental-layout .experimental-infoview__introduction h1 {
-    margin: 0;
-    color: var(--vscode-foreground);
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__introduction p {
-    margin: 6px 0 0;
-    color: var(--vscode-descriptionForeground);
-    line-height: 1.5;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__snapshot,
-.lean4-infoview-experimental-layout .experimental-infoview__notice,
-.lean4-infoview-experimental-layout .experimental-infoview > p {
-    max-width: 44rem;
-    margin-block-start: 24px;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__scope {
-    padding-block: 16px;
-    border-block-start: 1px solid var(--vscode-panel-border);
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__scope:first-child {
-    border-block-start: 0;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__scope h2,
-.lean4-infoview-experimental-layout .experimental-infoview__notice h2 {
-    margin: 0 0 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.4;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__scope dl {
+.lean4-infoview-experimental-layout .experimental-infoview__snapshot {
     display: grid;
-    gap: 8px;
-    margin: 0;
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__scope dl > div {
-    display: grid;
-    grid-template-columns: minmax(8rem, 0.35fr) minmax(0, 1fr);
+    max-width: 56rem;
     gap: 12px;
 }
 
-.lean4-infoview-experimental-layout .experimental-infoview__scope dt {
+.lean4-infoview-experimental-layout .experimental-proof-card {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+    border-radius: 4px;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 16px 12px;
+    border-block-end: 1px solid
+        var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity {
+    min-width: 0;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity h2 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity h2 code,
+.lean4-infoview-experimental-layout .experimental-proof-card__identity p code,
+.lean4-infoview-experimental-layout .experimental-proof-card__goal-heading code,
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis dt code {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+    font-weight: var(--vscode-editor-font-weight);
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity h2 code {
+    font-weight: 600;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity p {
+    display: flex;
+    min-width: 0;
+    gap: 6px;
+    margin: 4px 0 0;
     color: var(--vscode-descriptionForeground);
 }
 
-.lean4-infoview-experimental-layout .experimental-infoview__scope dd {
+.lean4-infoview-experimental-layout .experimental-proof-card__identity p > span {
+    flex: 0 0 auto;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__identity p code {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--vscode-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__count {
+    flex: 0 0 auto;
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__goal + .experimental-proof-card__goal {
+    border-block-start: 1px solid
+        var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder, transparent)));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__goal {
+    padding: 16px;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__goal-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-block-end: 12px;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__goal-heading h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__goal-heading code {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--vscode-descriptionForeground);
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__assumptions dl {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis {
+    display: grid;
+    grid-template-columns: minmax(5rem, 0.3fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis dt,
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis dd {
     min-width: 0;
     margin: 0;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis dt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: baseline;
+    color: var(--vscode-symbolIcon-variableForeground, var(--vscode-foreground));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__hypothesis dd,
+.lean4-infoview-experimental-layout .experimental-proof-card__target-expression {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+    white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
-.lean4-infoview-experimental-layout .experimental-infoview__scope code {
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-}
-
-.lean4-infoview-experimental-layout .experimental-infoview__empty {
+.lean4-infoview-experimental-layout .experimental-proof-card__definition {
     color: var(--vscode-descriptionForeground);
 }
 
-@media (max-width: 360px) {
+.lean4-infoview-experimental-layout .experimental-proof-card__target {
+    margin-block-start: 14px;
+    padding: 11px 12px 12px;
+    background: var(--vscode-textBlockQuote-background, var(--vscode-editorWidget-background));
+    border-block-start: 1px solid var(--vscode-textBlockQuote-border, var(--vscode-panel-border));
+    border-inline-start: 3px solid
+        var(--vscode-textBlockQuote-border, var(--vscode-widget-border, var(--vscode-panel-border)));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__target-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-block-end: 6px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__target-expression {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__target-expression > .font-code {
+    min-width: 0;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__turnstile {
+    flex: 0 0 auto;
+    color: var(--vscode-descriptionForeground);
+    font-weight: 600;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--vscode-descriptionForeground);
+    font-family: var(--vscode-font-family);
+    font-size: 0.78em;
+    font-weight: 500;
+    letter-spacing: normal;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__change > span {
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    border-radius: 50%;
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__change--added {
+    color: var(--vscode-gitDecoration-addedResourceForeground, var(--vscode-descriptionForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__change--removed {
+    color: var(--vscode-gitDecoration-deletedResourceForeground, var(--vscode-descriptionForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__change--changed {
+    color: var(--vscode-gitDecoration-modifiedResourceForeground, var(--vscode-descriptionForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__complete {
+    margin: 0;
+    padding: 16px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.lean4-infoview-experimental-layout .experimental-infoview__empty,
+.lean4-infoview-experimental-layout .experimental-infoview__notice,
+.lean4-infoview-experimental-layout .experimental-infoview > p {
+    max-width: 40rem;
+    margin: 0;
+    color: var(--vscode-descriptionForeground);
+}
+
+.lean4-infoview-experimental-layout .experimental-infoview__notice h2 {
+    margin: 0 0 6px;
+    color: var(--vscode-foreground);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.lean4-infoview-experimental-layout .experimental-infoview__notice p {
+    margin: 0;
+}
+
+@media (max-width: 420px) {
     .lean4-infoview-experimental-layout .experimental-infoview {
-        padding: 16px;
+        padding: 10px;
     }
 
-    .lean4-infoview-experimental-layout .experimental-infoview__scope dl > div {
+    .lean4-infoview-experimental-layout .experimental-proof-card__header {
+        flex-direction: column;
+        gap: 8px;
+        padding-inline: 12px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-proof-card__count {
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.85em;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-proof-card__goal {
+        padding: 13px 12px;
+    }
+
+    .lean4-infoview-experimental-layout .experimental-proof-card__hypothesis {
         grid-template-columns: 1fr;
-        gap: 2px;
+        gap: 1px;
     }
 }

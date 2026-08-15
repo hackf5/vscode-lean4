@@ -42,7 +42,13 @@ function Main({ uiElement }: { uiElement: HTMLElement }) {
         return () => uiElement.classList.remove(experimentalLayoutClassName)
     }, [config.experimentalLayout, uiElement])
 
-    return config.experimentalLayout === true ? <ExperimentalInfoview /> : <LegacyInfoview config={config} />
+    return config.experimentalLayout === true ? (
+        <ConfigContext.Provider value={config}>
+            <ExperimentalInfoview />
+        </ConfigContext.Provider>
+    ) : (
+        <LegacyInfoview config={config} />
+    )
 }
 
 function LegacyInfoview({ config }: { config: InfoviewConfig }) {

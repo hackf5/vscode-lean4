@@ -11,6 +11,7 @@ export interface DeclarationScope {
 
 export interface InteractiveGoalState {
     tacticRange?: Range
+    tacticText?: string
     useAfter: boolean
     declaration?: DeclarationScope
     goals: InteractiveGoals
