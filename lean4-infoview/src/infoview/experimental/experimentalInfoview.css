@@ -283,6 +283,11 @@
     font-weight: 600;
 }
 
+.lean4-infoview-experimental-layout .experimental-proof-card__declaration-prefix {
+    color: var(--vscode-descriptionForeground);
+    font-weight: var(--vscode-editor-font-weight);
+}
+
 .lean4-infoview-experimental-layout .experimental-proof-card__identity p {
     display: flex;
     min-width: 0;
@@ -298,10 +303,10 @@
 .lean4-infoview-experimental-layout .experimental-proof-card__identity p code {
     display: block;
     min-width: 0;
-    overflow: hidden;
+    max-width: 100%;
     color: var(--vscode-foreground);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .lean4-infoview-experimental-layout .experimental-proof-card__count {
@@ -497,6 +502,14 @@
     font-weight: 600;
 }
 
+.lean4-infoview-experimental-layout .experimental-proof-card__turnstile--added {
+    color: var(--vscode-gitDecoration-addedResourceForeground, var(--vscode-descriptionForeground));
+}
+
+.lean4-infoview-experimental-layout .experimental-proof-card__turnstile--removed {
+    color: var(--vscode-gitDecoration-deletedResourceForeground, var(--vscode-descriptionForeground));
+}
+
 .lean4-infoview-experimental-layout .experimental-proof-card__diff-marker {
     display: inline-flex;
     align-items: center;
@@ -529,7 +542,7 @@
 
 .lean4-infoview-experimental-layout .experimental-proof-card__outcome-divider::before,
 .lean4-infoview-experimental-layout .experimental-proof-card__outcome-divider--captioned::after {
-    min-width: 0;
+    min-width: 12px;
     height: 1px;
     flex: 1 1 auto;
     content: '';
@@ -538,13 +551,13 @@
 
 .lean4-infoview-experimental-layout .experimental-proof-card__outcome-divider code {
     min-width: 0;
-    overflow: hidden;
+    max-width: calc(100% - 40px);
     color: var(--vscode-descriptionForeground);
     font-family: var(--vscode-editor-font-family);
     font-size: 0.8em;
     font-weight: var(--vscode-editor-font-weight);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .lean4-infoview-experimental-layout .experimental-proof-card__complete {

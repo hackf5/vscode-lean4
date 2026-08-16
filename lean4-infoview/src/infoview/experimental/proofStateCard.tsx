@@ -341,8 +341,6 @@ function goalKey(goal: InteractiveGoal, index: number): string {
 }
 
 function goalCountLabel(count: number): string {
-    if (count === 0) return 'No goals'
-    if (count === 1) return '1 goal'
     return `${count} goals`
 }
 
@@ -363,11 +361,15 @@ function TargetExpression({
     type: CodeWithInfos
     change?: ChangeKind
 }) {
+    const stateLabel = change === 'added' ? 'Added target' : change === 'removed' ? 'Removed target' : label
+    const turnstileClass = `experimental-proof-card__turnstile${
+        change === 'added' || change === 'removed' ? ` experimental-proof-card__turnstile--${change}` : ''
+    }`
+
     return (
         <div className="experimental-proof-card__target-expression">
-            <DiffMarker kind={change} />
-            {label && <span className="experimental-proof-card__visually-hidden">{label}: </span>}
-            <span className="experimental-proof-card__turnstile" aria-hidden="true">
+            {stateLabel && <span className="experimental-proof-card__visually-hidden">{stateLabel}: </span>}
+            <span className={turnstileClass} aria-hidden="true">
                 {prefix}
             </span>
             <InteractiveCode fmt={type} />
@@ -422,14 +424,13 @@ function Goal({
                         : 'experimental-proof-card__goal-heading experimental-proof-card__visually-hidden'
                 }
             >
-                {hasVisibleHeading && <DiffMarker kind={goalChange} />}
                 <h4 id={headingId} className={changedNameClass(goalChange)}>
                     {count > 1 ? `Goal ${index + 1}` : 'Goal'}
                 </h4>
                 {goal.userName && <code className={changedNameClass(goalChange)}>case {goal.userName}</code>}
             </div>
             <Context hypotheses={goal.hyps.slice(sharedCount)} nameScopes={[goal.hyps]} />
-            <Target goal={goal} change={hasVisibleHeading ? targetChange : (goalChange ?? targetChange)} />
+            <Target goal={goal} change={goalChange ?? targetChange} />
         </section>
     )
 }
@@ -496,10 +497,16 @@ function Outcome({
 function cardTitle(states: InteractiveGoalState[]): React.ReactNode {
     if (states.length === 0) return 'Current expression'
     const declaration = states[0].declaration?.name
-    return declaration && states.every(state => state.declaration?.name === declaration) ? (
-        <code>{declaration}</code>
-    ) : (
-        'Current command'
+    if (!declaration || !states.every(state => state.declaration?.name === declaration)) return 'Current command'
+
+    const separator = declaration.lastIndexOf('.') + 1
+    return (
+        <code>
+            {separator > 0 && (
+                <span className="experimental-proof-card__declaration-prefix">{declaration.slice(0, separator)}</span>
+            )}
+            {declaration.slice(separator)}
+        </code>
     )
 }
 
@@ -533,7 +540,7 @@ export function ProofSnapshotCard({
                         </p>
                     )}
                 </div>
-                {states.length === 1 && (
+                {states.length === 1 && goalCount > 1 && (
                     <span className="experimental-proof-card__count">{goalCountLabel(goalCount)}</span>
                 )}
                 {states.length > 1 && <span className="experimental-proof-card__count">{states.length} outcomes</span>}
