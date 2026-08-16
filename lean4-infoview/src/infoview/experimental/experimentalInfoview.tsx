@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { Location, Range } from 'vscode-languageserver-protocol'
+import type { Location } from 'vscode-languageserver-protocol'
 
 import { CapabilityContext, EditorContext, EnvPosContext, VersionContext } from '../contexts'
 import { WithRpcSessions } from '../rpcSessions'
@@ -7,33 +7,9 @@ import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
 import { MessagesCard } from './messageCard'
 import { PanelWidgetCards } from './panelWidgetCard'
-import { ExpectedTypeCard, ProofStateCard } from './proofStateCard'
-import type { InteractiveGoalState } from './rpc'
+import { ProofSnapshotCard } from './proofStateCard'
 import { type InteractivePositionSnapshot, usePositionSnapshot } from './usePositionSnapshot'
 import { useSourceHighlight } from './useSourceHighlight'
-
-function rangeKey(range: Range | undefined): string {
-    if (!range) return 'no-range'
-    return `${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`
-}
-
-function stateKeyBase(state: InteractiveGoalState): string {
-    return [
-        rangeKey(state.tacticRange),
-        state.useAfter ? 'after' : 'before',
-        state.declaration?.name ?? 'command',
-    ].join('|')
-}
-
-function keyedStates(states: InteractiveGoalState[]): { key: string; state: InteractiveGoalState }[] {
-    const occurrences = new Map<string, number>()
-    return states.map(state => {
-        const base = stateKeyBase(state)
-        const occurrence = occurrences.get(base) ?? 0
-        occurrences.set(base, occurrence + 1)
-        return { key: occurrence === 0 ? base : `${base}|${occurrence}`, state }
-    })
-}
 
 function Snapshot({
     uri,
@@ -52,10 +28,9 @@ function Snapshot({
 
     return (
         <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
-            {keyedStates(states).map(({ key, state }) => (
-                <ProofStateCard key={key} state={state} />
-            ))}
-            {snapshot.expectedType && <ExpectedTypeCard expectedType={snapshot.expectedType} />}
+            {(states.length > 0 || snapshot.expectedType) && (
+                <ProofSnapshotCard states={states} expectedType={snapshot.expectedType} />
+            )}
             {hasWidgets && (
                 <PanelWidgetCards
                     pos={position}
