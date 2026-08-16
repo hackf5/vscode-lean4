@@ -46,25 +46,71 @@ function isInaccessibleName(name: string): boolean {
     return name.includes('✝')
 }
 
+function inaccessibleBaseName(name: string): string {
+    const daggerIndex = name.indexOf('✝')
+    return daggerIndex < 0 ? name : name.slice(0, daggerIndex)
+}
+
+const superscriptDigits: Record<string, string> = {
+    '⁰': '0',
+    '¹': '1',
+    '²': '2',
+    '³': '3',
+    '⁴': '4',
+    '⁵': '5',
+    '⁶': '6',
+    '⁷': '7',
+    '⁸': '8',
+    '⁹': '9',
+}
+
+function inaccessibleNameIndex(name: string): string | undefined {
+    const daggerIndex = name.indexOf('✝')
+    if (daggerIndex < 0) return undefined
+
+    const suffix = name.slice(daggerIndex + 1)
+    if (suffix.length === 0) return '0'
+
+    let index = ''
+    for (const digit of suffix) {
+        const ordinaryDigit = superscriptDigits[digit]
+        if (ordinaryDigit === undefined) return undefined
+        index += ordinaryDigit
+    }
+    return index
+}
+
+function shadowedHypothesisNames(contexts: InteractiveHypothesisBundle[][]): ReadonlySet<string> {
+    const shadowed = new Set<string>()
+    for (const context of contexts) {
+        const names = context.flatMap(InteractiveHypothesisBundle_nonAnonymousNames)
+        const accessibleNames = new Set(names.filter(name => !isInaccessibleName(name)))
+        for (const name of names) {
+            if (isInaccessibleName(name) && accessibleNames.has(inaccessibleBaseName(name))) shadowed.add(name)
+        }
+    }
+    return shadowed
+}
+
 interface HypothesisNameParts {
-    accessible: string[]
-    inaccessible: string[]
-    hasAnonymous: boolean
+    visible: string[]
+    hidden: string[]
+    anonymousCount: number
 }
 
 function hypothesisNameParts(hypothesis: InteractiveHypothesisBundle): HypothesisNameParts {
     const nonAnonymous = InteractiveHypothesisBundle_nonAnonymousNames(hypothesis)
     if (!hypothesis.isInstance) {
         return {
-            accessible: nonAnonymous,
-            inaccessible: [],
-            hasAnonymous: nonAnonymous.length < hypothesis.names.length,
+            visible: nonAnonymous,
+            hidden: [],
+            anonymousCount: hypothesis.names.length - nonAnonymous.length,
         }
     }
     return {
-        accessible: nonAnonymous.filter(name => !isInaccessibleName(name)),
-        inaccessible: nonAnonymous.filter(isInaccessibleName),
-        hasAnonymous: nonAnonymous.length < hypothesis.names.length,
+        visible: nonAnonymous.filter(name => !isInaccessibleName(name)),
+        hidden: nonAnonymous.filter(isInaccessibleName),
+        anonymousCount: hypothesis.names.length - nonAnonymous.length,
     }
 }
 
@@ -85,14 +131,52 @@ function HypothesisExpression({ hypothesis }: { hypothesis: InteractiveHypothesi
     )
 }
 
-function OrdinaryHypothesisRow({ hypothesis, names }: { hypothesis: InteractiveHypothesisBundle; names: string[] }) {
+function OrdinaryHypothesisRow({
+    hypothesis,
+    names,
+    shadowedNames,
+}: {
+    hypothesis: InteractiveHypothesisBundle
+    names: string[]
+    shadowedNames: ReadonlySet<string>
+}) {
     const change = changeKind(hypothesis, [hypothesis.type, hypothesis.val])
 
     return (
         <div className="experimental-proof-card__hypothesis">
             <dt>
-                <code>{names.length > 0 ? names.join(' ') : <span aria-label="anonymous assumption">_</span>}</code>
-                {change && <ChangeMarker kind={change} />}
+                <span
+                    className="experimental-proof-card__instance-marker experimental-proof-card__instance-marker--placeholder"
+                    aria-hidden="true"
+                >
+                    []
+                </span>
+                <span className="experimental-proof-card__hypothesis-name">
+                    <code>
+                        {names.length > 0 ? (
+                            names.map((name, index) => (
+                                <React.Fragment key={`${name}|${index}`}>
+                                    {index > 0 && ' '}
+                                    {shadowedNames.has(name) ? (
+                                        <>
+                                            <s className="experimental-proof-card__shadowed-name" aria-hidden="true">
+                                                {inaccessibleBaseName(name)}
+                                            </s>
+                                            <span className="experimental-proof-card__visually-hidden">
+                                                {inaccessibleBaseName(name)}, shadowed
+                                            </span>
+                                        </>
+                                    ) : (
+                                        name
+                                    )}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <span aria-label="anonymous assumption">_</span>
+                        )}
+                    </code>
+                    {change && <ChangeMarker kind={change} />}
+                </span>
             </dt>
             <dd>
                 <HypothesisExpression hypothesis={hypothesis} />
@@ -105,13 +189,15 @@ function InstanceHypothesisRow({
     hypothesis,
     names,
     anonymous,
+    anonymousIndex,
 }: {
     hypothesis: InteractiveHypothesisBundle
     names: string[]
     anonymous: boolean
+    anonymousIndex?: string
 }) {
     const change = changeKind(hypothesis, [hypothesis.type, hypothesis.val])
-    const description = anonymous ? 'Anonymous instance parameter' : `Instance parameter ${names.join(' ')}`
+    const marker = anonymousIndex === undefined ? '[]' : `[${anonymousIndex}]`
 
     return (
         <div
@@ -119,51 +205,74 @@ function InstanceHypothesisRow({
                 anonymous ? ' experimental-proof-card__instance-binder--anonymous' : ''
             }`}
         >
-            <dt className="experimental-proof-card__visually-hidden">{description}</dt>
+            <dt>
+                <span className="experimental-proof-card__instance-marker" aria-hidden="true">
+                    {marker}
+                </span>
+                <span className="experimental-proof-card__hypothesis-name">
+                    <span className="experimental-proof-card__visually-hidden">
+                        {anonymous
+                            ? `Anonymous instance parameter${
+                                  anonymousIndex === undefined ? '' : `, Lean index ${anonymousIndex}`
+                              }`
+                            : 'Instance parameter '}
+                    </span>
+                    {!anonymous && <code>{names.join(' ')}</code>}
+                </span>
+            </dt>
             <dd>
-                <span className="experimental-proof-card__binder-bracket" aria-hidden="true">
-                    [
-                </span>
-                {!anonymous && (
-                    <>
-                        <code className="experimental-proof-card__binder-name" aria-hidden="true">
-                            {names.join(' ')}
-                        </code>
-                        <span className="experimental-proof-card__binder-separator" aria-hidden="true">
-                            {' '}
-                            :{' '}
-                        </span>
-                    </>
-                )}
-                <span className="experimental-proof-card__binder-type">
-                    <HypothesisExpression hypothesis={hypothesis} />
-                </span>
-                <span className="experimental-proof-card__binder-bracket" aria-hidden="true">
-                    ]
-                </span>
+                <HypothesisExpression hypothesis={hypothesis} />
                 {change && <ChangeMarker kind={change} />}
             </dd>
         </div>
     )
 }
 
-function HypothesisRows({ hypothesis }: { hypothesis: InteractiveHypothesisBundle }) {
+function HypothesisRows({
+    hypothesis,
+    shadowedNames,
+}: {
+    hypothesis: InteractiveHypothesisBundle
+    shadowedNames: ReadonlySet<string>
+}) {
     const names = hypothesisNameParts(hypothesis)
-    if (!hypothesis.isInstance) return <OrdinaryHypothesisRow hypothesis={hypothesis} names={names.accessible} />
+    if (!hypothesis.isInstance)
+        return <OrdinaryHypothesisRow hypothesis={hypothesis} names={names.visible} shadowedNames={shadowedNames} />
 
-    const hasAnonymousPart = names.inaccessible.length > 0 || names.hasAnonymous || names.accessible.length === 0
+    const unindexedCount = Math.max(
+        names.anonymousCount,
+        names.visible.length === 0 && names.hidden.length === 0 ? 1 : 0,
+    )
     return (
         <>
-            {names.accessible.length > 0 && (
-                <InstanceHypothesisRow hypothesis={hypothesis} names={names.accessible} anonymous={false} />
+            {names.visible.length > 0 && (
+                <InstanceHypothesisRow hypothesis={hypothesis} names={names.visible} anonymous={false} />
             )}
-            {hasAnonymousPart && <InstanceHypothesisRow hypothesis={hypothesis} names={[]} anonymous />}
+            {names.hidden.map((name, index) => (
+                <InstanceHypothesisRow
+                    key={`${name}|${index}`}
+                    hypothesis={hypothesis}
+                    names={[]}
+                    anonymous
+                    anonymousIndex={inaccessibleNameIndex(name)}
+                />
+            ))}
+            {Array.from({ length: unindexedCount }, (_, index) => (
+                <InstanceHypothesisRow key={`anonymous|${index}`} hypothesis={hypothesis} names={[]} anonymous />
+            ))}
         </>
     )
 }
 
-function Context({ hypotheses }: { hypotheses: InteractiveHypothesisBundle[] }) {
+function Context({
+    hypotheses,
+    nameScopes = [hypotheses],
+}: {
+    hypotheses: InteractiveHypothesisBundle[]
+    nameScopes?: InteractiveHypothesisBundle[][]
+}) {
     if (hypotheses.length === 0) return null
+    const shadowedNames = shadowedHypothesisNames(nameScopes)
 
     return (
         <div className="experimental-proof-card__context">
@@ -171,74 +280,12 @@ function Context({ hypotheses }: { hypotheses: InteractiveHypothesisBundle[] }) 
                 <dl>
                     {hypotheses.map((hypothesis, index) => (
                         <React.Fragment key={hypothesisKey(hypothesis, index)}>
-                            <HypothesisRows hypothesis={hypothesis} />
+                            <HypothesisRows hypothesis={hypothesis} shadowedNames={shadowedNames} />
                         </React.Fragment>
                     ))}
                 </dl>
             </div>
         </div>
-    )
-}
-
-interface TechnicalScope {
-    key: string
-    label: string
-    hypotheses: InteractiveHypothesisBundle[]
-}
-
-interface GeneratedInstanceName {
-    key: string
-    name: string
-    hypothesis: InteractiveHypothesisBundle
-}
-
-function generatedInstanceNames(hypotheses: InteractiveHypothesisBundle[]): GeneratedInstanceName[] {
-    return hypotheses.flatMap((hypothesis, hypothesisIndex) => {
-        if (!hypothesis.isInstance) return []
-        return hypothesisNameParts(hypothesis).inaccessible.map((name, nameIndex) => ({
-            key: `${hypothesisKey(hypothesis, hypothesisIndex)}|${nameIndex}`,
-            name,
-            hypothesis,
-        }))
-    })
-}
-
-function TechnicalScopeSection({ label, entries }: { label: string; entries: GeneratedInstanceName[] }) {
-    const headingId = React.useId()
-    return (
-        <section className="experimental-proof-card__technical-scope" aria-labelledby={headingId}>
-            <h3 id={headingId}>{label}</h3>
-            <dl>
-                {entries.map(entry => (
-                    <div key={entry.key}>
-                        <dt>
-                            <code>{entry.name}</code>
-                        </dt>
-                        <dd>
-                            <HypothesisExpression hypothesis={entry.hypothesis} />
-                        </dd>
-                    </div>
-                ))}
-            </dl>
-        </section>
-    )
-}
-
-function TechnicalDetails({ scopes }: { scopes: TechnicalScope[] }) {
-    const populatedScopes = scopes
-        .map(scope => ({ ...scope, entries: generatedInstanceNames(scope.hypotheses) }))
-        .filter(scope => scope.entries.length > 0)
-    if (populatedScopes.length === 0) return null
-
-    return (
-        <details className="experimental-proof-card__technical-details">
-            <summary>Technical details</summary>
-            <div className="experimental-proof-card__technical-details-body">
-                {populatedScopes.map(scope => (
-                    <TechnicalScopeSection key={scope.key} label={scope.label} entries={scope.entries} />
-                ))}
-            </div>
-        </details>
     )
 }
 
@@ -309,7 +356,7 @@ function ExpectedType({ expectedType, sharedCount }: { expectedType: Interactive
             <h3 id={headingId} className="experimental-proof-card__phase-heading">
                 Expected type
             </h3>
-            <Context hypotheses={expectedType.hyps.slice(sharedCount)} />
+            <Context hypotheses={expectedType.hyps.slice(sharedCount)} nameScopes={[expectedType.hyps]} />
             <div className="experimental-proof-card__expected-expression">
                 <span className="experimental-proof-card__turnstile" aria-hidden="true">
                     ⊢{' '}
@@ -349,7 +396,7 @@ function Goal({
                 {goal.userName && <code>case {goal.userName}</code>}
                 {goalChange && <ChangeMarker kind={goalChange} />}
             </div>
-            <Context hypotheses={goal.hyps.slice(sharedCount)} />
+            <Context hypotheses={goal.hyps.slice(sharedCount)} nameScopes={[goal.hyps]} />
             <Target goal={goal} change={targetChange} />
         </section>
     )
@@ -408,21 +455,6 @@ function cardTitle(states: InteractiveGoalState[]): React.ReactNode {
     )
 }
 
-function outcomeScopeLabel(
-    state: InteractiveGoalState,
-    stateIndex: number,
-    stateCount: number,
-    goal: InteractiveGoal,
-    goalIndex: number,
-    goalCount: number,
-): string {
-    const parts = [state.useAfter ? 'After' : 'Before']
-    if (stateCount > 1) parts.push(`outcome ${stateIndex + 1}`)
-    if (goalCount > 1) parts.push(`goal ${goalIndex + 1}`)
-    if (goal.userName) parts.push(`case ${goal.userName}`)
-    return parts.join(' · ')
-}
-
 export function ProofSnapshotCard({
     states,
     expectedType,
@@ -439,25 +471,6 @@ export function ProofSnapshotCard({
     const sharedCount = sharedContextLength(contexts)
     const sharedContext = contexts.length > 0 ? contexts[contexts.length - 1].slice(0, sharedCount) : []
     const singleTactic = states.length === 1 ? tacticLabel(states[0]) : undefined
-    const technicalScopes: TechnicalScope[] = [
-        { key: 'shared', label: 'Shared context', hypotheses: sharedContext },
-        ...(expectedType
-            ? [
-                  {
-                      key: 'expected',
-                      label: 'Expected type',
-                      hypotheses: expectedType.hyps.slice(sharedCount),
-                  },
-              ]
-            : []),
-        ...states.flatMap((state, stateIndex) =>
-            state.goals.goals.map((goal, goalIndex) => ({
-                key: `${stateKey(state, stateIndex)}|${goalKey(goal, goalIndex)}`,
-                label: outcomeScopeLabel(state, stateIndex, states.length, goal, goalIndex, state.goals.goals.length),
-                hypotheses: goal.hyps.slice(sharedCount),
-            })),
-        ),
-    ]
 
     return (
         <article className="experimental-proof-card" aria-labelledby={headingId}>
@@ -482,7 +495,7 @@ export function ProofSnapshotCard({
                 {sharedContext.length > 0 && (
                     <section className="experimental-proof-card__shared-context">
                         <h3 className="experimental-proof-card__visually-hidden">Shared context</h3>
-                        <Context hypotheses={sharedContext} />
+                        <Context hypotheses={sharedContext} nameScopes={contexts} />
                     </section>
                 )}
                 {expectedType && <ExpectedType expectedType={expectedType} sharedCount={sharedCount} />}
@@ -494,7 +507,6 @@ export function ProofSnapshotCard({
                         sharedCount={sharedCount}
                     />
                 ))}
-                <TechnicalDetails scopes={technicalScopes} />
             </div>
         </article>
     )
