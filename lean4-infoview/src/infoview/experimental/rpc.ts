@@ -20,6 +20,7 @@ export interface InteractiveGoalState {
 export interface InteractiveGoalSnapshot {
     queryPosition: Position
     commandRange?: Range
+    declaration?: DeclarationScope
     states: InteractiveGoalState[]
 }
 

@@ -23,7 +23,10 @@ function sourceHighlight(
     uri: string,
     snapshot: InteractiveGoalSnapshot,
 ): ExperimentalInfoviewSourceHighlight | undefined {
-    const declarationRanges = uniqueRanges(snapshot.states.map(state => state.declaration?.range))
+    const declarationRanges = uniqueRanges([
+        snapshot.declaration?.range,
+        ...snapshot.states.map(state => state.declaration?.range),
+    ])
     const scopeRanges = declarationRanges.length > 0 ? declarationRanges : uniqueRanges([snapshot.commandRange])
     const tacticRanges = uniqueRanges(snapshot.states.map(state => state.tacticRange))
     if (scopeRanges.length === 0 && tacticRanges.length === 0) return undefined

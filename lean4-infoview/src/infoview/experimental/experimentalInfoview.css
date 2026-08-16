@@ -246,6 +246,33 @@
     white-space: pre-wrap;
 }
 
+.lean4-infoview-experimental-layout .experimental-message-card__actions {
+    display: flex;
+    align-items: center;
+    margin-block-start: 12px;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__action {
+    padding: 4px 10px;
+    color: var(--vscode-button-foreground);
+    font: inherit;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    cursor: pointer;
+    background: var(--vscode-button-background);
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 2px;
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__action:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.lean4-infoview-experimental-layout .experimental-message-card__action:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
 .lean4-infoview-experimental-layout .experimental-proof-card__header {
     display: flex;
     align-items: flex-start;

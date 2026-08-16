@@ -8,7 +8,7 @@ import {
 import * as React from 'react'
 
 import { InteractiveCode } from '../interactiveCode'
-import type { InteractiveGoalState } from './rpc'
+import type { DeclarationScope, InteractiveGoalState } from './rpc'
 
 type ChangeKind = 'added' | 'removed' | 'changed'
 
@@ -494,10 +494,13 @@ function Outcome({
     )
 }
 
-function cardTitle(states: InteractiveGoalState[]): React.ReactNode {
-    if (states.length === 0) return 'Current expression'
-    const declaration = states[0].declaration?.name
-    if (!declaration || !states.every(state => state.declaration?.name === declaration)) return 'Current command'
+function cardTitle(states: InteractiveGoalState[], snapshotDeclaration?: DeclarationScope): React.ReactNode {
+    const stateDeclaration = states[0]?.declaration?.name
+    const declaration =
+        stateDeclaration && states.every(state => state.declaration?.name === stateDeclaration)
+            ? stateDeclaration
+            : snapshotDeclaration?.name
+    if (!declaration) return states.length === 0 ? 'Current expression' : 'Current command'
 
     const separator = declaration.lastIndexOf('.') + 1
     return (
@@ -513,9 +516,11 @@ function cardTitle(states: InteractiveGoalState[]): React.ReactNode {
 export function ProofSnapshotCard({
     states,
     expectedType,
+    declaration,
 }: {
     states: InteractiveGoalState[]
     expectedType?: InteractiveTermGoal
+    declaration?: DeclarationScope
 }) {
     const headingId = React.useId()
     const goalCount = states.reduce((total, state) => total + state.goals.goals.length, 0)
@@ -531,7 +536,7 @@ export function ProofSnapshotCard({
         <article className="experimental-proof-card" aria-labelledby={headingId}>
             <header className="experimental-proof-card__header">
                 <div className="experimental-proof-card__identity">
-                    <h2 id={headingId}>{cardTitle(states)}</h2>
+                    <h2 id={headingId}>{cardTitle(states, declaration)}</h2>
                     {singleTactic && (
                         <p>
                             <code title={singleTactic.exact} aria-label={singleTactic.exact}>

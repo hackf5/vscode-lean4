@@ -1,4 +1,4 @@
-import type { InteractiveDiagnostic } from '@leanprover/infoview-api'
+import { TaggedText_stripTags, type InteractiveDiagnostic } from '@leanprover/infoview-api'
 import * as React from 'react'
 import { DiagnosticSeverity, type DocumentUri, type Location, type Range } from 'vscode-languageserver-protocol'
 
@@ -13,6 +13,24 @@ interface SeverityPresentation {
     label: string
     tallyLabel: string
     tallyPlural: string
+}
+
+const importsOutOfDateMessage = 'Imports are out of date and must be rebuilt'
+
+function startsAtFileStart(range: Range): boolean {
+    return range.start.line === 0 && range.start.character === 0
+}
+
+export function isImportsOutOfDateError(message: InteractiveDiagnostic): boolean {
+    return (
+        message.severity === DiagnosticSeverity.Error &&
+        startsAtFileStart(message.range) &&
+        TaggedText_stripTags(message.message).includes(importsOutOfDateMessage)
+    )
+}
+
+export function hasImportsOutOfDateError(messages: InteractiveDiagnostic[]): boolean {
+    return messages.some(isImportsOutOfDateError)
 }
 
 function severityPresentation(severity: DiagnosticSeverity | undefined): SeverityPresentation {
@@ -79,6 +97,7 @@ function DiagnosticMessage({ uri, message }: { uri: DocumentUri; message: Intera
     const location: Location = { uri, range: message.range }
     const environmentPosition: DocumentPosition = { uri, ...(message.fullRange?.start ?? message.range.start) }
     const visibleLocation = `${fileName} · ${line + 1}:${character}`
+    const canRestartFile = isImportsOutOfDateError(message)
 
     return (
         <li className="experimental-message-card__diagnostic" data-severity={severity.kind}>
@@ -99,6 +118,18 @@ function DiagnosticMessage({ uri, message }: { uri: DocumentUri; message: Intera
                         <InteractiveMessage fmt={message.message} />
                     </EnvPosContext.Provider>
                 </div>
+                {canRestartFile && (
+                    <div className="experimental-message-card__actions">
+                        <button
+                            type="button"
+                            className="experimental-message-card__action"
+                            onClick={() => void editor.api.restartFile(uri)}
+                            title="Restart this file and rebuild its outdated imports"
+                        >
+                            Restart file
+                        </button>
+                    </div>
+                )}
             </section>
         </li>
     )

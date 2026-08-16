@@ -5,7 +5,7 @@ import { CapabilityContext, EditorContext, EnvPosContext, VersionContext } from 
 import { WithRpcSessions } from '../rpcSessions'
 import { ServerVersion } from '../serverVersion'
 import { mapRpcError, useEventResult } from '../util'
-import { MessagesCard } from './messageCard'
+import { hasImportsOutOfDateError, MessagesCard } from './messageCard'
 import { PanelWidgetCards } from './panelWidgetCard'
 import { ProofSnapshotCard } from './proofStateCard'
 import { type InteractivePositionSnapshot, usePositionSnapshot } from './usePositionSnapshot'
@@ -24,12 +24,17 @@ function Snapshot({
     const hasExpectedType = snapshot.expectedType !== undefined
     const hasWidgets = snapshot.widgets.length > 0
     const hasMessages = snapshot.messages.length > 0
+    const mustRestartFile = hasImportsOutOfDateError(snapshot.messages)
     const position = { uri, ...snapshot.queryPosition }
 
     return (
         <div className="experimental-infoview__snapshot" aria-busy={busy || undefined}>
             {(states.length > 0 || snapshot.expectedType) && (
-                <ProofSnapshotCard states={states} expectedType={snapshot.expectedType} />
+                <ProofSnapshotCard
+                    states={states}
+                    expectedType={snapshot.expectedType}
+                    declaration={snapshot.scopedGoals?.declaration}
+                />
             )}
             {hasWidgets && (
                 <PanelWidgetCards
@@ -45,7 +50,7 @@ function Snapshot({
                     No proof state, expected type, panel widget, or messages at this position.
                 </p>
             )}
-            {!snapshot.scopedGoals && (
+            {!snapshot.scopedGoals && !mustRestartFile && (
                 <section className="experimental-infoview__notice" aria-labelledby="experimental-rpc-unavailable">
                     <h2 id="experimental-rpc-unavailable">Scoped proof states are unavailable</h2>
                     <p>The open Lean file does not provide the experimental Infoview RPC.</p>
