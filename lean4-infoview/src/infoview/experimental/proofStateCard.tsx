@@ -28,12 +28,42 @@ function changeKind(
     return undefined
 }
 
-function ChangeMarker({ kind }: { kind: ChangeKind }) {
-    const label = kind[0].toUpperCase() + kind.slice(1)
+function DiffMarker({ kind }: { kind?: ChangeKind }) {
+    if (kind !== 'added' && kind !== 'removed') return null
+
+    const label = kind === 'added' ? 'Added' : 'Removed'
+    const symbol = kind === 'added' ? '+' : '−'
     return (
-        <span className={`experimental-proof-card__change experimental-proof-card__change--${kind}`}>
-            <span aria-hidden="true" />
-            {label}
+        <span className={`experimental-proof-card__diff-marker experimental-proof-card__diff-marker--${kind}`}>
+            <span aria-hidden="true">{symbol}</span>
+            <span className="experimental-proof-card__visually-hidden">{label}: </span>
+        </span>
+    )
+}
+
+function changedNameClass(kind: ChangeKind | undefined): string | undefined {
+    return kind === 'added' || kind === 'removed' ? `experimental-proof-card__name--${kind}` : undefined
+}
+
+function HypothesisMarker({ change, instance }: { change?: ChangeKind; instance?: string }) {
+    const hasDiffMarker = change === 'added' || change === 'removed'
+    return (
+        <span className="experimental-proof-card__row-marker">
+            <DiffMarker kind={change} />
+            {instance !== undefined ? (
+                <span className="experimental-proof-card__instance-marker" aria-hidden="true">
+                    {instance}
+                </span>
+            ) : (
+                !hasDiffMarker && (
+                    <span
+                        className="experimental-proof-card__instance-marker experimental-proof-card__instance-marker--placeholder"
+                        aria-hidden="true"
+                    >
+                        []
+                    </span>
+                )
+            )}
         </span>
     )
 }
@@ -145,14 +175,9 @@ function OrdinaryHypothesisRow({
     return (
         <div className="experimental-proof-card__hypothesis">
             <dt>
-                <span
-                    className="experimental-proof-card__instance-marker experimental-proof-card__instance-marker--placeholder"
-                    aria-hidden="true"
-                >
-                    []
-                </span>
+                <HypothesisMarker change={change} />
                 <span className="experimental-proof-card__hypothesis-name">
-                    <code>
+                    <code className={changedNameClass(change)}>
                         {names.length > 0 ? (
                             names.map((name, index) => (
                                 <React.Fragment key={`${name}|${index}`}>
@@ -175,7 +200,6 @@ function OrdinaryHypothesisRow({
                             <span aria-label="anonymous assumption">_</span>
                         )}
                     </code>
-                    {change && <ChangeMarker kind={change} />}
                 </span>
             </dt>
             <dd>
@@ -206,9 +230,7 @@ function InstanceHypothesisRow({
             }`}
         >
             <dt>
-                <span className="experimental-proof-card__instance-marker" aria-hidden="true">
-                    {marker}
-                </span>
+                <HypothesisMarker change={change} instance={marker} />
                 <span className="experimental-proof-card__hypothesis-name">
                     <span className="experimental-proof-card__visually-hidden">
                         {anonymous
@@ -217,12 +239,11 @@ function InstanceHypothesisRow({
                               }`
                             : 'Instance parameter '}
                     </span>
-                    {!anonymous && <code>{names.join(' ')}</code>}
+                    {!anonymous && <code className={changedNameClass(change)}>{names.join(' ')}</code>}
                 </span>
             </dt>
             <dd>
                 <HypothesisExpression hypothesis={hypothesis} />
-                {change && <ChangeMarker kind={change} />}
             </dd>
         </div>
     )
@@ -331,19 +352,33 @@ function tacticLabel(state: InteractiveGoalState): { display: string; exact?: st
     return { display: exact.replace(/\s+/g, ' ').trim() || 'Selected tactic', exact }
 }
 
+function TargetExpression({
+    label,
+    prefix,
+    type,
+    change,
+}: {
+    label?: string
+    prefix: string
+    type: CodeWithInfos
+    change?: ChangeKind
+}) {
+    return (
+        <div className="experimental-proof-card__target-expression">
+            <DiffMarker kind={change} />
+            {label && <span className="experimental-proof-card__visually-hidden">{label}: </span>}
+            <span className="experimental-proof-card__turnstile" aria-hidden="true">
+                {prefix}
+            </span>
+            <InteractiveCode fmt={type} />
+        </div>
+    )
+}
+
 function Target({ goal, change }: { goal: InteractiveGoal; change?: ChangeKind }) {
     return (
         <div className="experimental-proof-card__target">
-            <div className="experimental-proof-card__target-heading">
-                <span>Target</span>
-                {change && <ChangeMarker kind={change} />}
-            </div>
-            <div className="experimental-proof-card__target-expression">
-                <span className="experimental-proof-card__turnstile" aria-hidden="true">
-                    {goal.goalPrefix}
-                </span>
-                <InteractiveCode fmt={goal.type} />
-            </div>
+            <TargetExpression label="Target" prefix={goal.goalPrefix ?? '⊢ '} type={goal.type} change={change} />
         </div>
     )
 }
@@ -353,16 +388,11 @@ function ExpectedType({ expectedType, sharedCount }: { expectedType: Interactive
 
     return (
         <section className="experimental-proof-card__phase" aria-labelledby={headingId}>
-            <h3 id={headingId} className="experimental-proof-card__phase-heading">
+            <h3 id={headingId} className="experimental-proof-card__visually-hidden">
                 Expected type
             </h3>
             <Context hypotheses={expectedType.hyps.slice(sharedCount)} nameScopes={[expectedType.hyps]} />
-            <div className="experimental-proof-card__expected-expression">
-                <span className="experimental-proof-card__turnstile" aria-hidden="true">
-                    ⊢{' '}
-                </span>
-                <InteractiveCode fmt={expectedType.type} />
-            </div>
+            <TargetExpression prefix="⊢ " type={expectedType.type} />
         </section>
     )
 }
@@ -381,7 +411,7 @@ function Goal({
     const headingId = React.useId()
     const goalChange = goal.isInserted ? 'added' : goal.isRemoved ? 'removed' : undefined
     const targetChange = goalChange ? undefined : changeKind({}, [goal.type])
-    const hasVisibleHeading = count > 1 || goal.userName !== undefined || goalChange !== undefined
+    const hasVisibleHeading = count > 1 || goal.userName !== undefined
 
     return (
         <section className="experimental-proof-card__goal" aria-labelledby={headingId}>
@@ -392,12 +422,14 @@ function Goal({
                         : 'experimental-proof-card__goal-heading experimental-proof-card__visually-hidden'
                 }
             >
-                <h4 id={headingId}>{count > 1 ? `Goal ${index + 1}` : 'Goal'}</h4>
-                {goal.userName && <code>case {goal.userName}</code>}
-                {goalChange && <ChangeMarker kind={goalChange} />}
+                {hasVisibleHeading && <DiffMarker kind={goalChange} />}
+                <h4 id={headingId} className={changedNameClass(goalChange)}>
+                    {count > 1 ? `Goal ${index + 1}` : 'Goal'}
+                </h4>
+                {goal.userName && <code className={changedNameClass(goalChange)}>case {goal.userName}</code>}
             </div>
             <Context hypotheses={goal.hyps.slice(sharedCount)} nameScopes={[goal.hyps]} />
-            <Target goal={goal} change={targetChange} />
+            <Target goal={goal} change={hasVisibleHeading ? targetChange : (goalChange ?? targetChange)} />
         </section>
     )
 }
@@ -410,24 +442,40 @@ function stateKey(state: InteractiveGoalState, index: number): string {
     return `${rangePart}|${state.useAfter ? 'after' : 'before'}|${state.declaration?.name ?? 'command'}|${index}`
 }
 
-function Outcome({ state, count, sharedCount }: { state: InteractiveGoalState; count: number; sharedCount: number }) {
+function Outcome({
+    state,
+    count,
+    sharedCount,
+    showDivider,
+}: {
+    state: InteractiveGoalState
+    count: number
+    sharedCount: number
+    showDivider: boolean
+}) {
     const headingId = React.useId()
     const tactic = tacticLabel(state)
     const goals = state.goals.goals
+    const phase = state.useAfter ? 'After' : 'Before'
 
     return (
         <section
             className="experimental-proof-card__phase experimental-proof-card__outcome"
             aria-labelledby={headingId}
         >
-            <div className="experimental-proof-card__phase-heading">
-                <h3 id={headingId}>{state.useAfter ? 'After' : 'Before'}</h3>
-                {count > 1 && (
-                    <code title={tactic.exact} aria-label={tactic.exact}>
-                        {tactic.display}
-                    </code>
-                )}
-            </div>
+            <h3 id={headingId} className="experimental-proof-card__visually-hidden">
+                {phase}: {tactic.exact ?? tactic.display}
+            </h3>
+            {showDivider && (
+                <div
+                    className={`experimental-proof-card__outcome-divider${
+                        count > 1 ? ' experimental-proof-card__outcome-divider--captioned' : ''
+                    }`}
+                    aria-hidden="true"
+                >
+                    {count > 1 && <code title={tactic.exact}>{tactic.display}</code>}
+                </div>
+            )}
             {goals.length === 0 ? (
                 <p className="experimental-proof-card__complete">No goals remain.</p>
             ) : (
@@ -505,6 +553,7 @@ export function ProofSnapshotCard({
                         state={state}
                         count={states.length}
                         sharedCount={sharedCount}
+                        showDivider={expectedType !== undefined || index > 0 || states.length > 1}
                     />
                 ))}
             </div>
